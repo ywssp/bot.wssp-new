@@ -299,7 +299,15 @@ export class AddPlaylistCommand extends Command {
             continue;
           }
 
-          const playableTracks = nextTracks.filter((track) => track.playable);
+          let playableTracks = nextTracks.filter((track) => track.playable);
+
+          if (playlist instanceof SpotifyAlbum) {
+            playableTracks = playableTracks.map((track) => {
+              track.thumbnail = playlist.thumbnail;
+
+              return track;
+            });
+          }
 
           foundTracks.push(...playableTracks);
         }
@@ -316,7 +324,9 @@ export class AddPlaylistCommand extends Command {
           Duration.fromMillis(track.durationInMs)
         );
 
-        return new QueuedTrackInfo(track, interaction.user);
+        const convertedTrack = new QueuedTrackInfo(track, interaction.user);
+
+        return convertedTrack;
       });
 
       playlistMetadata = {
