@@ -54,7 +54,7 @@ export class NowPlayingCommand extends Command {
     if (playType === 'queued_track') {
       const messageData = this.getTrackEmbed(interaction, guildMusicData);
 
-      const currentTrack = guildMusicData.queueSystemData.currentTrack();
+      const currentTrack = guildMusicData.queueData.getCurrentTrack();
 
       if (currentTrack instanceof QueuedAdaptedTrackInfo) {
         const viewSourceRow =
@@ -110,14 +110,15 @@ export class NowPlayingCommand extends Command {
     interaction: ChatInputCommand.Interaction,
     guildMusicData: GuildMusicData
   ) {
-    const queueData = guildMusicData.queueSystemData;
-    const currentTrack = queueData.currentTrack();
+    const queueData = guildMusicData.queueData;
+    const currentTrack = queueData.getCurrentTrack();
     const audioPlayer = getAudioPlayer(interaction.guildId as string);
 
     if (
       audioPlayer === undefined ||
       (audioPlayer.state.status !== 'playing' &&
-        audioPlayer.state.status !== 'paused')
+        audioPlayer.state.status !== 'paused') ||
+      currentTrack === undefined
     ) {
       return {
         content: '❓ | Nothing is playing.',

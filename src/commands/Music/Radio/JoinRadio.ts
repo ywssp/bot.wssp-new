@@ -176,7 +176,7 @@ export class JoinRadioCommand extends Command {
         disconnectGuildFromRadioWebsocket(interaction.guildId as string);
         interaction.reply('Switching radio stations...');
       } else {
-        guildMusicData.queueSystemData.playing = false;
+        guildMusicData.queueData.playing = false;
 
         interaction.reply('Switching to radio...');
       }

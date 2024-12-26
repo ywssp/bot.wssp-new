@@ -32,14 +32,14 @@ export class DisplayQueueCommand extends Command {
 
     if (
       guildMusicData === undefined ||
-      guildMusicData.queueSystemData.getQueue().length <= 1
+      guildMusicData.queueData.getQueue().length <= 1
     ) {
       interaction.reply('❓ | The queue is empty.');
       return;
     }
 
-    const guildQueueData = guildMusicData.queueSystemData;
-    const queue = guildQueueData.getQueue().slice(1);
+    const guildQueueData = guildMusicData.queueData;
+    const queue = guildQueueData.getQueue();
 
     const queueFields = queue.map((track, index) =>
       createEmbedFieldFromTrack(track, `${index + 1}. `)
@@ -59,10 +59,13 @@ export class DisplayQueueCommand extends Command {
         description += '\n';
       }
 
-      const currentTrack = guildQueueData.currentTrack();
-      description += `🔂 | ${inlineCode(currentTrack.title)} by ${inlineCode(
-        currentTrack.getArtistHyperlinks()
-      )} is looping.`;
+      const currentTrack = guildQueueData.getCurrentTrack();
+
+      if (currentTrack !== undefined) {
+        description += `🔂 | ${inlineCode(currentTrack.title)} by ${inlineCode(
+          currentTrack.getArtistHyperlinks()
+        )} is looping.`;
+      }
     }
 
     const embed = new EmbedBuilder()

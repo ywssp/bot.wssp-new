@@ -166,7 +166,7 @@ export class PlayMusicCommand extends Command {
       interaction.guildId as string,
       voiceChannel,
       interaction.channel
-    ).queueSystemData;
+    ).queueData;
 
     let source = interaction.options.getSubcommand(true) as
       | 'youtube'
@@ -336,7 +336,7 @@ export class PlayMusicCommand extends Command {
       queuedTrack = new QueuedTrackInfo(searchResult, interaction.user);
     }
 
-    guildQueueData.addTrackToQueue(queuedTrack);
+    guildQueueData.addTracksToQueue(queuedTrack);
 
     const namings = getTrackNamings(queuedTrack);
 

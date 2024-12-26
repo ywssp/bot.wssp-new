@@ -161,7 +161,7 @@ export class SearchVideosCommand extends Command {
       interaction.guildId as string,
       voiceChannel,
       interaction.channel
-    ).queueSystemData;
+    ).queueData;
 
     const source = interaction.options.getSubcommand() as
       | 'youtube'
@@ -308,7 +308,7 @@ export class SearchVideosCommand extends Command {
 
     // TODO: Implement caching of selected track
     // Previous code: storeTrackInCache(queuedTrack);
-    guildQueueData.addTrackToQueue(queuedTrack);
+    guildQueueData.addTracksToQueue(queuedTrack);
 
     const baseEmbed = new EmbedBuilder()
       .setColor(ColorPalette.Success)

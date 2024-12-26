@@ -130,7 +130,7 @@ export class AddPlaylistCommand extends Command {
       interaction.guildId as string,
       voiceChannel,
       interaction.channel
-    ).queueSystemData;
+    ).queueData;
 
     const link = interaction.options.getString('link') as string;
 
@@ -423,7 +423,7 @@ export class AddPlaylistCommand extends Command {
       embeds: [embed]
     });
 
-    guildQueueData.addTrackToQueue(...tracks);
+    guildQueueData.addTracksToQueue(...tracks);
 
     startQueuePlayback(interaction.guildId as string);
   }

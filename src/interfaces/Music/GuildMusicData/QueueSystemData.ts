@@ -5,9 +5,13 @@ import {
   QueuedTrackInfo
 } from '../Queue System/TrackInfo';
 
+export type QueueItem = QueuedTrackInfo | QueuedAdaptedTrackInfo;
+
 export class QueueSystemData {
-  trackQueue: (QueuedTrackInfo | QueuedAdaptedTrackInfo)[];
-  trackHistory: (QueuedTrackInfo | QueuedAdaptedTrackInfo)[];
+  trackQueue: QueueItem[];
+  trackHistory: QueueItem[];
+  currentTrack?: QueueItem;
+
   playing: boolean;
   /**
    * Whether the current track was skipped
@@ -39,32 +43,52 @@ export class QueueSystemData {
   }
 
   /**
-   * Returns the track in the list at the current index
+   * Returns the track currently being played
    */
-  currentTrack(): (typeof this.trackQueue)[number] {
-    return this.trackQueue[0];
+  getCurrentTrack() {
+    return this.currentTrack;
   }
 
   /**
    * Updates the current track with the given track
    * @param track The track to update the current track with
    */
-  updateCurrentTrack(track: (typeof this.trackQueue)[number]) {
-    this.trackQueue[0] = track;
+  updateCurrentTrack(track: typeof this.currentTrack) {
+    this.currentTrack = track;
   }
 
   /**
-   * Returns the array of tracks after the current track
+   * Returns the array of tracks that will be played next
    */
   getQueue(): typeof this.trackQueue {
     return this.trackQueue;
   }
 
   /**
-   * Returns the array of tracks before the current track
+   * Returns the array of tracks recently played
    */
   getHistory(): typeof this.trackHistory {
     return this.trackHistory;
+  }
+
+  addTracksToQueue(...track: typeof this.trackQueue) {
+    this.trackQueue.push(...track);
+  }
+
+  advanceQueue(amount: number, skip: boolean): QueueItem[] {
+    if (this.loop.type === 'track' && !skip) {
+      return [];
+    }
+
+    if (skip) {
+      this.markSkipped();
+    }
+
+    const skippedTracks = this.trackQueue.splice(0, amount);
+
+    this.updateCurrentTrack(skippedTracks[skippedTracks.length - 1]);
+
+    return skippedTracks;
   }
 
   setLoopType(type: typeof this.loop.type) {
@@ -81,9 +105,5 @@ export class QueueSystemData {
    */
   markSkipped() {
     this.skipped = true;
-  }
-
-  addTrackToQueue(...track: typeof this.trackQueue) {
-    this.trackQueue.push(...track);
   }
 }

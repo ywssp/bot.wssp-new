@@ -47,7 +47,7 @@ export class SetLoopCommand extends Command {
       return;
     }
 
-    const guildQueueData = guildMusicData.queueSystemData;
+    const guildQueueData = guildMusicData.queueData;
 
     const mode = interaction.options.getString('mode') as
       | 'off'

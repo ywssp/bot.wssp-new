@@ -8,11 +8,13 @@ import { RadioData } from './RadioData';
 
 export class GuildMusicData {
   guildId: string;
-  textUpdateChannelId: string;
   voiceChannelId: string;
-  musicAnnounceStyle: 'embed_fancy' | 'embed_simple' | 'text_simple' | 'none';
-  queueSystemData: QueueSystemData;
+  announceChannelId: string;
+  announceStyle: 'embed_fancy' | 'embed_simple' | 'text_simple' | 'none';
+
+  queueData: QueueSystemData;
   radioData: RadioData;
+
   leaveTimeout: NodeJS.Timeout | null = null;
 
   constructor(
@@ -21,21 +23,21 @@ export class GuildMusicData {
     textUpdateChannel: SendableChannels
   ) {
     this.guildId = guildId;
-    this.textUpdateChannelId = textUpdateChannel.id;
+    this.announceChannelId = textUpdateChannel.id;
     this.voiceChannelId = voiceChannel.id;
-    this.musicAnnounceStyle = 'embed_simple';
-    this.queueSystemData = new QueueSystemData();
+    this.announceStyle = 'embed_simple';
+    this.queueData = new QueueSystemData();
     this.radioData = new RadioData();
   }
 
   getTextUpdateChannel() {
     return container.client.channels.cache.get(
-      this.textUpdateChannelId
+      this.announceChannelId
     ) as SendableChannels;
   }
 
   setTextUpdateChannel(channel: SendableChannels) {
-    this.textUpdateChannelId = channel.id;
+    this.announceChannelId = channel.id;
   }
 
   sendUpdateMessage(message: Parameters<SendableChannels['send']>[0]) {
@@ -43,7 +45,7 @@ export class GuildMusicData {
 
     if (textUpdateChannel === undefined) {
       throw new Error(
-        `Cannot find text update channel with id ${this.textUpdateChannelId}`
+        `Cannot find text update channel with id ${this.announceChannelId}`
       );
     }
 

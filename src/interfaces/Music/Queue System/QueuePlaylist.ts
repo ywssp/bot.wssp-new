@@ -1,12 +1,12 @@
 'use strict';
 
-import { QueueSystemData } from '../GuildMusicData/QueueSystemData';
+import { QueueItem } from '../GuildMusicData/QueueSystemData';
 
 export class QueuePlaylist {
   title: string;
   url: string;
 
-  trackList: QueueSystemData['trackQueue'];
+  trackList: QueueItem[];
   trackOrder: number[] = [];
   shuffled: boolean;
   loop: 'off' | 'track' | 'queue';

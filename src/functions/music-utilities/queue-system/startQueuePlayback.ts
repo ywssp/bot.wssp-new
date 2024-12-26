@@ -45,14 +45,18 @@ import { createSimpleEmbedFromTrack } from './createSimpleEmbedFromTrack';
 import { getTrackNamings } from './getTrackNamings';
 import { matchYTMusicToSpotify } from './searchers/spotify';
 
-function sendNowPlayingMessage(guildMusicData: GuildMusicData) {
-  const currentTrack = guildMusicData.queueSystemData.currentTrack();
-  const nextTrack = guildMusicData.queueSystemData.getQueue()[1];
+function sendNowPlayingMessage(musicData: GuildMusicData) {
+  const currentTrack = musicData.queueData.getCurrentTrack();
+  const nextTrack = musicData.queueData.getQueue()[0];
 
-  const announceStyle = guildMusicData.musicAnnounceStyle;
+  const announceStyle = musicData.announceStyle;
 
   if (announceStyle === 'none') {
     return;
+  }
+
+  if (currentTrack === undefined) {
+    throw new Error('No track is currently playing.');
   }
 
   let message: Parameters<GuildMusicData['sendUpdateMessage']>[0];
@@ -76,7 +80,7 @@ function sendNowPlayingMessage(guildMusicData: GuildMusicData) {
         getTrackNamings(nextTrack).trackTerm
       );
 
-      if (guildMusicData.queueSystemData.shuffle) {
+      if (musicData.queueData.shuffle) {
         nextString = `🔀 | The next track will be randomly picked from the queue.`;
         nextTrackIdentifier = 'Track';
       } else {
@@ -126,7 +130,7 @@ function sendNowPlayingMessage(guildMusicData: GuildMusicData) {
         getTrackNamings(nextTrack).trackTerm
       );
 
-      if (guildMusicData.queueSystemData.shuffle) {
+      if (musicData.queueData.shuffle) {
         nextString = `🔀 Shuffled`;
         nextTrackIdentifier = 'Track';
       } else {
@@ -165,7 +169,7 @@ function sendNowPlayingMessage(guildMusicData: GuildMusicData) {
     } | Added by ${inlineCode(currentTrack.addedBy)}`;
 
     if (nextTrack) {
-      if (guildMusicData.queueSystemData.shuffle) {
+      if (musicData.queueData.shuffle) {
         text += '\n🔀 | The next track will be randomly picked from the queue.';
       } else {
         const nextTrackIdentifier = _.capitalize(
@@ -186,36 +190,38 @@ function sendNowPlayingMessage(guildMusicData: GuildMusicData) {
     message = text;
   }
 
-  guildMusicData.sendUpdateMessage(message);
+  musicData.sendUpdateMessage(message);
 }
 
 function handleTrackEnd(guildId: string) {
-  const localMusicData = getGuildMusicData(guildId);
+  const musicData = getGuildMusicData(guildId);
 
-  if (localMusicData === undefined) {
+  if (musicData === undefined) {
     return;
   }
 
-  const localQueueData = localMusicData.queueSystemData;
+  const queueData = musicData.queueData;
 
-  if (localQueueData.loop.type === 'queue') {
-    localQueueData.trackQueue.push(localQueueData.currentTrack());
+  if (
+    queueData.loop.type === 'queue' &&
+    queueData.getCurrentTrack() !== undefined
+  ) {
+    queueData.addTracksToQueue(queueData.getCurrentTrack()!);
   }
 
-  if (localQueueData.loop.type !== 'track') {
-    localQueueData.trackQueue.shift();
+  if (queueData.loop.type !== 'track') {
+    queueData.advanceQueue(1, false);
   }
 
-  const isQueueEmpty = localQueueData.getQueue().length === 0;
+  const isQueueEmpty = queueData.getCurrentTrack() === undefined;
 
   const isVCEmpty =
-    localMusicData
-      .getVoiceChannel()
-      .members.filter((member) => !member.user.bot).size === 0;
+    musicData.getVoiceChannel().members.filter((member) => !member.user.bot)
+      .size === 0;
 
   // If the queue is empty or the voice channel is empty, start a timeout to leave the voice channel
   // Only start the timeout if it hasn't been started yet
-  if ((isVCEmpty || isQueueEmpty) && localMusicData.leaveTimeout === null) {
+  if ((isVCEmpty || isQueueEmpty) && musicData.leaveTimeout === null) {
     const embed = new EmbedBuilder().setColor(ColorPalette.Notice);
 
     if (isQueueEmpty) {
@@ -230,13 +236,13 @@ function handleTrackEnd(guildId: string) {
       );
     }
 
-    localMusicData.sendUpdateMessage({ embeds: [embed] });
+    musicData.sendUpdateMessage({ embeds: [embed] });
 
-    localMusicData.leaveTimeout = setTimeout(() => {
+    musicData.leaveTimeout = setTimeout(() => {
       const futureMusicData = getGuildMusicData(guildId);
 
       const futureQueueEmpty =
-        futureMusicData?.queueSystemData.getQueue().length === 0;
+        futureMusicData?.queueData.getQueue().length === 0;
 
       const futureVCEmpty =
         futureMusicData === undefined ||
@@ -259,7 +265,7 @@ function handleTrackEnd(guildId: string) {
       if (futureQueueEmpty || futureVCEmpty) {
         futureMusicData?.sendUpdateMessage({ embeds: [timeoutEmbed] });
 
-        localQueueData.playing = false;
+        queueData.playing = false;
         disposeAudioPlayer(guildId);
         getVoiceConnection(guildId)?.destroy();
       }
@@ -271,26 +277,26 @@ function handleTrackEnd(guildId: string) {
     return;
   }
 
-  if (localQueueData.shuffle && localQueueData.loop.type !== 'track') {
-    const randomIndex = Math.floor(
-      Math.random() * localQueueData.getQueue().length
-    );
+  if (queueData.shuffle && queueData.loop.type !== 'track') {
+    const randomIndex = Math.floor(Math.random() * queueData.getQueue().length);
 
-    const selectedTrack = localQueueData.trackQueue.splice(randomIndex, 1)[0];
+    const selectedTrack = queueData.trackQueue.splice(randomIndex, 1)[0];
 
-    localQueueData.trackQueue.unshift(selectedTrack);
+    queueData.addTracksToQueue(selectedTrack);
   }
 
   const audioPlayer = getAudioPlayer(guildId);
 
   if (audioPlayer === undefined) {
-    localMusicData.sendUpdateMessage({
+    musicData.sendUpdateMessage({
       content: '❌ | An error occurred while trying to play the next track.'
     });
     return;
   }
 
-  playTrack(localQueueData.currentTrack(), audioPlayer, localMusicData);
+  if (!isQueueEmpty) {
+    playTrack(queueData.getCurrentTrack()!, audioPlayer, musicData);
+  }
 }
 
 async function playTrack(
@@ -331,7 +337,7 @@ async function playTrack(
       } as User
     );
 
-    musicData.queueSystemData.updateCurrentTrack(track);
+    musicData.queueData.updateCurrentTrack(track);
   }
 
   const metadata: MusicResourceMetadata = {
@@ -387,16 +393,16 @@ async function playTrack(
 
   audioPlayer.play(resource);
 
-  const trackSkipped = musicData.queueSystemData.skipped;
-  const isLoopingByTrack = musicData.queueSystemData.loop.type === 'track';
+  const trackSkipped = musicData.queueData.skipped;
+  const isLoopingByTrack = musicData.queueData.loop.type === 'track';
 
   // Do not send the now playing message if the track has looped successfully
   // This will only run when the loop type isn't 'track', or
   // When the loop type is 'track' and the track was skipped
   if (!(!trackSkipped && isLoopingByTrack)) {
-    musicData.queueSystemData.skipped = false;
+    musicData.queueData.skipped = false;
 
-    musicData.queueSystemData.trackHistory.push(track);
+    musicData.queueData.trackHistory.push(track);
 
     sendNowPlayingMessage(musicData);
   }
@@ -421,7 +427,14 @@ export function startQueuePlayback(guildId: string) {
     guildMusicData.leaveTimeout = null;
   }
 
-  const queueData = guildMusicData.queueSystemData;
+  const queueData = guildMusicData.queueData;
+
+  if (
+    queueData.getCurrentTrack() === undefined &&
+    queueData.getQueue().length > 0
+  ) {
+    queueData.advanceQueue(1, false);
+  }
 
   const voiceConnection = connectToVoiceChannel(
     guildMusicData.getVoiceChannel()
@@ -436,16 +449,21 @@ export function startQueuePlayback(guildId: string) {
 
   // Handles the switch of the source of the audio player
   if (playingType === 'radio') {
-    const currentTrackIdentifier = getTrackNamings(
-      queueData.currentTrack()
-    ).fullTrackTerm;
-
-    guildMusicData.sendUpdateMessage(
-      `Disconnecting from the radio to play a ${currentTrackIdentifier}...`
-    );
+    guildMusicData.sendUpdateMessage(`Disconnecting from the radio...`);
 
     // Disconnects the guild from the radio websocket
     disconnectGuildFromRadioWebsocket(guildId);
+  }
+
+  if (queueData.getQueue().length === 0) {
+    const embed = new EmbedBuilder()
+      .setColor(ColorPalette.Error)
+      .setTitle('Queue Empty')
+      .setDescription('There are no tracks in the queue.');
+
+    guildMusicData.sendUpdateMessage({ embeds: [embed] });
+
+    return;
   }
 
   audioPlayer = audioPlayer.on('error', (error) => {
@@ -492,7 +510,7 @@ export function startQueuePlayback(guildId: string) {
   voiceConnection.subscribe(audioPlayer);
 
   queueData.playing = true;
-  playTrack(queueData.currentTrack(), audioPlayer, guildMusicData);
+  playTrack(queueData.getCurrentTrack()!, audioPlayer, guildMusicData);
 
   audioPlayer.on(AudioPlayerStatus.Idle, () => handleTrackEnd(guildId));
 }

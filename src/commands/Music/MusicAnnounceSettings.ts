@@ -115,9 +115,11 @@ export class MusicAnnounceSettingsCommand extends Command {
       }
     }
     if (interaction.options.getSubcommand() === 'style') {
-      guildMusicData.musicAnnounceStyle = interaction.options.getString(
-        'style'
-      ) as 'embed_fancy' | 'embed_simple' | 'text_simple' | 'none';
+      guildMusicData.announceStyle = interaction.options.getString('style') as
+        | 'embed_fancy'
+        | 'embed_simple'
+        | 'text_simple'
+        | 'none';
 
       const styleDisplayNames = {
         embed_fancy: 'Embed - Fancy',
@@ -128,7 +130,7 @@ export class MusicAnnounceSettingsCommand extends Command {
 
       interaction.reply(
         `✅ | Set the music announce style to \`${
-          styleDisplayNames[guildMusicData.musicAnnounceStyle]
+          styleDisplayNames[guildMusicData.announceStyle]
         }\`.`
       );
     }

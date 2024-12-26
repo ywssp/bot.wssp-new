@@ -44,15 +44,15 @@ export class ClearTrackListCommand extends Command {
       return;
     }
 
-    const guildQueueData = guildMusicData.queueSystemData;
+    const guildQueueData = guildMusicData.queueData;
 
     if (interaction.options.getSubcommand() === 'queue') {
-      guildQueueData.trackQueue = [guildQueueData.currentTrack()];
+      guildQueueData.trackQueue = [];
 
       interaction.reply('🗑 | Cleared the track queue.');
     }
     if (interaction.options.getSubcommand() === 'history') {
-      guildQueueData.trackHistory.length = 0;
+      guildQueueData.trackHistory = [];
 
       interaction.reply('🗑 | Cleared the track history.');
     }

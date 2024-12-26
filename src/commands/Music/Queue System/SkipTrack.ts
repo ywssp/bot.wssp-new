@@ -44,7 +44,7 @@ export class SkipTrackCommand extends Command {
       return;
     }
 
-    const guildQueueData = guildMusicData.queueSystemData;
+    const guildQueueData = guildMusicData.queueData;
 
     const audioPlayer = getAudioPlayer(interaction.guildId as string);
 
@@ -76,8 +76,12 @@ export class SkipTrackCommand extends Command {
       skipNumber = 1;
     }
 
-    const skippedTracks = guildQueueData.trackQueue.slice(0, skipNumber);
+    const currentTrack = guildQueueData.getCurrentTrack()!;
+
+    const skippedTracks = guildQueueData.trackQueue.slice(0, skipNumber - 1);
     guildQueueData.trackQueue.splice(0, skipNumber - 1);
+
+    skippedTracks.unshift(currentTrack);
 
     const embed = new EmbedBuilder()
       .setColor(ColorPalette.Notice)
@@ -87,7 +91,7 @@ export class SkipTrackCommand extends Command {
         } from the queue`
       );
 
-    guildQueueData.skipped = true;
+    guildQueueData.markSkipped();
 
     audioPlayer.stop();
     interaction.reply({

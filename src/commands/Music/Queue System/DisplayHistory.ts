@@ -31,14 +31,15 @@ export class DisplayTrackHistoryCommand extends Command {
 
     if (
       guildMusicData === undefined ||
-      guildMusicData.queueSystemData.getHistory().length === 0
+      guildMusicData.queueData.getHistory().length === 0
     ) {
       interaction.reply('❓ | The track history is empty.');
       return;
     }
 
-    const history = guildMusicData.queueSystemData.getHistory();
+    const history = guildMusicData.queueData.getHistory();
 
+    // Reverses a copy of the array instead
     const historyFields = history
       .slice(0)
       .reverse()

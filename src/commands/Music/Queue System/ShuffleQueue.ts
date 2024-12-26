@@ -42,7 +42,7 @@ export class ShuffleQueueCommand extends Command {
       return;
     }
 
-    const guildQueueData = guildMusicData.queueSystemData;
+    const guildQueueData = guildMusicData.queueData;
 
     const mode =
       interaction.options.getBoolean('shuffle') ?? !guildQueueData.shuffle;

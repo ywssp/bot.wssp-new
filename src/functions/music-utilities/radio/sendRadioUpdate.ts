@@ -22,15 +22,15 @@ export function sendRadioUpdate(
     throw Error('Guild does not have music data!');
   }
 
-  if (guildMusicData.musicAnnounceStyle === 'embed_fancy') {
+  if (guildMusicData.announceStyle === 'embed_fancy') {
     const embed = createFancyRadioSongEmbed(data.song);
 
     guildMusicData.sendUpdateMessage({ embeds: [embed] });
-  } else if (guildMusicData.musicAnnounceStyle === 'embed_simple') {
+  } else if (guildMusicData.announceStyle === 'embed_simple') {
     const embed = createSimpleRadioSongEmbed(data.song);
 
     guildMusicData.sendUpdateMessage({ embeds: [embed] });
-  } else if (guildMusicData.musicAnnounceStyle === 'text_simple') {
+  } else if (guildMusicData.announceStyle === 'text_simple') {
     const artistNames = data.song.artists
       .map((artist) => artist.name)
       .join(', ');
