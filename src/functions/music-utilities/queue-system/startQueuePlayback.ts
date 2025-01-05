@@ -27,6 +27,7 @@ import { Duration } from 'luxon';
 
 import { GuildMusicData } from '../../../interfaces/Music/GuildMusicData/GuildMusicData';
 import { MusicResourceMetadata } from '../../../interfaces/Music/MusicResourceMetadata';
+import { QueuePlaylist } from '../../../interfaces/Music/Queue System/QueuePlaylist';
 import {
   AdaptedTrackInfo,
   QueuedAdaptedTrackInfo,
@@ -47,7 +48,11 @@ import { matchYTMusicToSpotify } from './searchers/spotify';
 
 function sendNowPlayingMessage(musicData: GuildMusicData) {
   const currentTrack = musicData.queueData.getCurrentTrack();
-  const nextTrack = musicData.queueData.getQueue()[0];
+  let nextTrack = musicData.queueData.getQueue()[0];
+
+  if (nextTrack instanceof QueuePlaylist) {
+    nextTrack = nextTrack.getRemainingTracks()[0];
+  }
 
   const announceStyle = musicData.announceStyle;
 
@@ -209,7 +214,7 @@ function handleTrackEnd(guildId: string) {
     queueData.addTracksToQueue(queueData.getCurrentTrack()!);
   }
 
-  if (queueData.loop.type !== 'track') {
+  if (queueData.loop.type !== 'track' && !queueData.skipped) {
     queueData.advanceQueue(1, false);
   }
 
@@ -359,11 +364,12 @@ async function playTrack(
     audioTrack.source === 'youtube_music'
   ) {
     const streamedTrack = ytdl(audioTrack.url, {
-      filter: 'audioonly',
+      filter: 'audio',
       quality: 'highestaudio',
       highWaterMark: 1 << 62,
       liveBuffer: 1 << 62,
-      dlChunkSize: 0
+      dlChunkSize: 0,
+      playerClients: ['IOS', 'WEB_CREATOR']
     });
 
     streamedTrack.on('error', (error) => {
@@ -429,13 +435,6 @@ export function startQueuePlayback(guildId: string) {
 
   const queueData = guildMusicData.queueData;
 
-  if (
-    queueData.getCurrentTrack() === undefined &&
-    queueData.getQueue().length > 0
-  ) {
-    queueData.advanceQueue(1, false);
-  }
-
   const voiceConnection = connectToVoiceChannel(
     guildMusicData.getVoiceChannel()
   );
@@ -455,15 +454,11 @@ export function startQueuePlayback(guildId: string) {
     disconnectGuildFromRadioWebsocket(guildId);
   }
 
-  if (queueData.getQueue().length === 0) {
-    const embed = new EmbedBuilder()
-      .setColor(ColorPalette.Error)
-      .setTitle('Queue Empty')
-      .setDescription('There are no tracks in the queue.');
-
-    guildMusicData.sendUpdateMessage({ embeds: [embed] });
-
-    return;
+  if (
+    queueData.getCurrentTrack() === undefined &&
+    queueData.getQueue().length > 0
+  ) {
+    queueData.advanceQueue(1, false);
   }
 
   audioPlayer = audioPlayer.on('error', (error) => {

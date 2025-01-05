@@ -23,6 +23,7 @@ import { Duration } from 'luxon';
 
 import { createGuildMusicData } from '../../../functions/music-utilities/guildMusicDataManager';
 import { startQueuePlayback } from '../../../functions/music-utilities/queue-system/startQueuePlayback';
+import { QueuePlaylist } from '../../../interfaces/Music/Queue System/QueuePlaylist';
 import { QueuedTrackInfo } from '../../../interfaces/Music/Queue System/TrackInfo';
 import { ColorPalette } from '../../../settings/ColorPalette';
 import {
@@ -363,10 +364,6 @@ export class AddPlaylistCommand extends Command {
       guildQueueData.setLoopType('queue');
     }
 
-    if (interaction.options.getBoolean('shuffle')) {
-      guildQueueData.shuffle = true;
-    }
-
     let lengthDescription = '';
 
     if (playlistDuration instanceof Duration) {
@@ -433,7 +430,15 @@ export class AddPlaylistCommand extends Command {
       embeds: [embed]
     });
 
-    guildQueueData.addTracksToQueue(...tracks);
+    const queuePlaylist = new QueuePlaylist(
+      playlistMetadata.title,
+      link,
+      tracks,
+      interaction.options.getBoolean('shuffle') ?? false,
+      false
+    );
+
+    guildQueueData.addPlaylistToQueue(queuePlaylist);
 
     startQueuePlayback(interaction.guildId as string);
   }

@@ -1,5 +1,6 @@
 'use strict';
 
+import { QueuePlaylist } from '../Queue System/QueuePlaylist';
 import {
   QueuedAdaptedTrackInfo,
   QueuedTrackInfo
@@ -8,7 +9,7 @@ import {
 export type QueueItem = QueuedTrackInfo | QueuedAdaptedTrackInfo;
 
 export class QueueSystemData {
-  trackQueue: QueueItem[];
+  trackQueue: (QueueItem | QueuePlaylist)[];
   trackHistory: QueueItem[];
   currentTrack?: QueueItem;
 
@@ -75,18 +76,43 @@ export class QueueSystemData {
     this.trackQueue.push(...track);
   }
 
-  advanceQueue(amount: number, skip: boolean): QueueItem[] {
-    if (this.loop.type === 'track' && !skip) {
-      return [];
-    }
+  addPlaylistToQueue(playlist: QueuePlaylist) {
+    this.trackQueue.push(playlist);
+  }
 
+  advanceQueue(amount: number, skip: boolean): QueueItem[] {
     if (skip) {
       this.markSkipped();
     }
 
-    const skippedTracks = this.trackQueue.splice(0, amount);
+    const skippedTracks: QueueItem[] = [];
 
-    this.updateCurrentTrack(skippedTracks[skippedTracks.length - 1]);
+    for (let i = 0; i < amount; i++) {
+      if (this.trackQueue.length === 0) {
+        break;
+      }
+
+      let track: QueueItem;
+
+      if (this.trackQueue[0] instanceof QueuePlaylist) {
+        const playlist = this.trackQueue[0];
+
+        if (playlist.getRemainingTracksCount() === 0) {
+          this.trackQueue.shift();
+
+          i--;
+          continue;
+        } else {
+          track = playlist.advanceTrack(1).pop() as QueueItem;
+        }
+      } else {
+        track = this.trackQueue.shift() as QueueItem;
+      }
+
+      skippedTracks.push(track);
+    }
+
+    this.updateCurrentTrack(skippedTracks.pop());
 
     return skippedTracks;
   }

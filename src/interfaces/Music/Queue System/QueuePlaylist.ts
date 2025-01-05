@@ -8,15 +8,17 @@ export class QueuePlaylist {
 
   trackList: QueueItem[];
   trackOrder: number[] = [];
+  currentIndex: number = 0;
+
   shuffled: boolean;
-  loop: 'off' | 'track' | 'queue';
+  queueLoop: boolean;
 
   constructor(
-    title: string,
-    url: string,
+    title: typeof this.title,
+    url: typeof this.url,
     trackList: typeof this.trackList,
-    shuffled: boolean,
-    loop: typeof this.loop
+    shuffled: typeof this.shuffled,
+    loop: typeof this.queueLoop
   ) {
     this.title = title;
     this.url = url;
@@ -25,7 +27,7 @@ export class QueuePlaylist {
     this.initTrackOrder();
 
     this.shuffled = shuffled;
-    this.loop = loop;
+    this.queueLoop = loop;
 
     if (this.shuffled) {
       this.shuffle();
@@ -33,7 +35,7 @@ export class QueuePlaylist {
   }
 
   initTrackOrder() {
-    this.trackOrder = [0];
+    this.currentIndex = -1;
 
     this.unshuffle();
   }
@@ -49,7 +51,7 @@ export class QueuePlaylist {
   }
 
   unshuffle() {
-    const startPoint = this.trackOrder[0];
+    const startPoint = this.currentIndex + 1;
     this.trackOrder = [];
 
     for (let i = startPoint; i < this.trackList.length; i++) {
@@ -65,17 +67,14 @@ export class QueuePlaylist {
     return this.trackOrder.length;
   }
 
-  advanceTrack(amount: number, skip: boolean): (typeof this.trackList)[number] {
-    if (this.loop === 'track' && !skip) {
-      return this.trackList[this.trackOrder[0]];
-    }
-
-    if (amount < 0 || amount >= this.trackOrder.length) {
+  advanceTrack(amount: number): typeof this.trackList {
+    if (amount < 0 || amount > this.trackOrder.length) {
       throw new Error('Invalid amount');
     }
 
-    this.trackOrder.splice(0, amount);
+    const removedIndexes = this.trackOrder.splice(0, amount);
+    this.currentIndex = removedIndexes[removedIndexes.length - 1];
 
-    return this.trackList[this.trackOrder[0]];
+    return removedIndexes.map((index) => this.trackList[index]);
   }
 }

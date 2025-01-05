@@ -6,6 +6,7 @@ import { EmbedBuilder } from 'discord.js';
 import { getAudioPlayer } from '../../../functions/music-utilities/getAudioPlayer';
 import { getGuildMusicData } from '../../../functions/music-utilities/guildMusicDataManager';
 import { createEmbedFromTrackArray } from '../../../functions/music-utilities/queue-system/createEmbedFromTrackArray';
+import { QueuePlaylist } from '../../../interfaces/Music/Queue System/QueuePlaylist';
 import { ColorPalette } from '../../../settings/ColorPalette';
 
 export class SkipTrackCommand extends Command {
@@ -58,15 +59,19 @@ export class SkipTrackCommand extends Command {
 
     let skipNumber = interaction.options.getInteger('number') ?? 1;
 
-    if (
-      skipNumber < 1 ||
-      (guildQueueData.getQueue().length - 1 > 0 &&
-        skipNumber >= guildQueueData.getQueue().length)
-    ) {
+    let range = 0;
+
+    for (const item of guildQueueData.getQueue()) {
+      if (item instanceof QueuePlaylist) {
+        range += item.getRemainingTracksCount();
+      } else {
+        range++;
+      }
+    }
+
+    if (skipNumber < 1 || (range > 0 && skipNumber > range)) {
       interaction.reply({
-        content: `⛔ | Invalid number. The number must be between \`1-${
-          guildQueueData.getQueue().length
-        }\`.`,
+        content: `⛔ | Invalid number. The number must be between \`1-${range}\`.`,
         ephemeral: true
       });
       return;
@@ -76,12 +81,10 @@ export class SkipTrackCommand extends Command {
       skipNumber = 1;
     }
 
-    const currentTrack = guildQueueData.getCurrentTrack()!;
-
-    const skippedTracks = guildQueueData.trackQueue.slice(0, skipNumber - 1);
-    guildQueueData.trackQueue.splice(0, skipNumber - 1);
-
-    skippedTracks.unshift(currentTrack);
+    const skippedTracks = [
+      guildQueueData.getCurrentTrack()!,
+      ...guildQueueData.advanceQueue(skipNumber, true)
+    ];
 
     const embed = new EmbedBuilder()
       .setColor(ColorPalette.Notice)
