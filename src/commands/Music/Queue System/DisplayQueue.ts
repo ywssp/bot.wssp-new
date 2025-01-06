@@ -1,7 +1,7 @@
 'use strict';
 
 import { ChatInputCommand, Command } from '@sapphire/framework';
-import { EmbedBuilder, inlineCode } from 'discord.js';
+import { bold, EmbedBuilder, hyperlink, inlineCode } from 'discord.js';
 
 import { createPagedEmbed } from '../../../functions/createPagedEmbed';
 import { getGuildMusicData } from '../../../functions/music-utilities/guildMusicDataManager';
@@ -49,6 +49,7 @@ export class DisplayQueueCommand extends Command {
 
     const queueFields = [];
     let playlistQueue: QueuedTrackInfo[] = [];
+    let endOfPlaylist = false;
 
     while (index < queue.length) {
       const currentItem = queue[index];
@@ -58,9 +59,19 @@ export class DisplayQueueCommand extends Command {
         currentItem.getRemainingTracksCount() > 0 &&
         playlistQueue.length === 0
       ) {
+        let header = '';
+
+        if (currentItem.currentIndex !== undefined) {
+          header = 'Currently playing from';
+        } else {
+          header = 'Start of Playlist';
+        }
+
         const playlistField = {
-          name: `📼 Start of Playlist`,
-          value: `**[${currentItem.title}](${currentItem.url})**`,
+          name: `\u200b`,
+          value: `📼 ${header} ${bold(
+            hyperlink(currentItem.title, currentItem.url)
+          )}`,
           inline: false
         };
 
@@ -76,14 +87,8 @@ export class DisplayQueueCommand extends Command {
 
         if (playlistQueue.length === 0) {
           index++;
-
-          const endPlaylistField = {
-            name: `📼 End of Playlist`,
-            value: `**[${currentItem.title}](${currentItem.url})**`,
-            inline: false
-          };
-
-          queueFields.push(endPlaylistField);
+          playlistQueue = [];
+          endOfPlaylist = true;
         }
       } else {
         track = currentItem as QueueItem;
@@ -91,6 +96,20 @@ export class DisplayQueueCommand extends Command {
       }
 
       queueFields.push(createEmbedFieldFromTrack(track, `${trackNumber}. `));
+
+      if (endOfPlaylist) {
+        const endPlaylistField = {
+          name: `\u200b`,
+          value: `📼 End of Playlist ${bold(
+            hyperlink(currentItem.title, currentItem.url)
+          )}`,
+          inline: false
+        };
+
+        queueFields.push(endPlaylistField);
+
+        endOfPlaylist = false;
+      }
 
       trackNumber++;
     }
