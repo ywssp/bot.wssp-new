@@ -8,7 +8,7 @@ export class QueuePlaylist {
 
   trackList: QueueItem[];
   trackOrder: number[] = [];
-  currentIndex: number = 0;
+  currentIndex?: number;
 
   shuffled: boolean;
   queueLoop: boolean;
@@ -35,8 +35,6 @@ export class QueuePlaylist {
   }
 
   initTrackOrder() {
-    this.currentIndex = -1;
-
     this.unshuffle();
   }
 
@@ -51,7 +49,7 @@ export class QueuePlaylist {
   }
 
   unshuffle() {
-    const startPoint = this.currentIndex + 1;
+    const startPoint = (this.currentIndex ?? -1) + 1;
     this.trackOrder = [];
 
     for (let i = startPoint; i < this.trackList.length; i++) {

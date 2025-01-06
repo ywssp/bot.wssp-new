@@ -20,7 +20,8 @@ import {
 } from '@discordjs/voice';
 
 import * as playdl from 'play-dl';
-import ytdl from '@distube/ytdl-core';
+
+import { Readable } from 'stream';
 
 import _ from 'lodash';
 import { Duration } from 'luxon';
@@ -363,22 +364,15 @@ async function playTrack(
     audioTrack.source === 'youtube' ||
     audioTrack.source === 'youtube_music'
   ) {
-    const streamedTrack = ytdl(audioTrack.url, {
-      filter: 'audio',
-      quality: 'highestaudio',
-      highWaterMark: 1 << 62,
-      liveBuffer: 1 << 62,
-      dlChunkSize: 0,
-      playerClients: ['IOS', 'WEB_CREATOR']
+    const streamedTrack = await container.innertube.download(audioTrack.id, {
+      type: 'video+audio',
+      quality: 'best',
+      client: 'YTMUSIC'
     });
 
-    streamedTrack.on('error', (error) => {
-      container.logger.error(error);
-      streamedTrack.destroy();
-      audioPlayer.stop();
-    });
+    const readableStream = Readable.from(streamedTrack);
 
-    resource = createAudioResource(streamedTrack, {
+    resource = createAudioResource(readableStream, {
       metadata
     });
   } else {

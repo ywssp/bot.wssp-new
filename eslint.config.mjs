@@ -1,14 +1,15 @@
 'use strict';
 
-import { fixupConfigRules, fixupPluginRules } from '@eslint/compat';
-import typescriptEslint from '@typescript-eslint/eslint-plugin';
-import prettier from 'eslint-plugin-prettier';
-import globals from 'globals';
-import tsParser from '@typescript-eslint/parser';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import js from '@eslint/js';
+
+import { fixupConfigRules, fixupPluginRules } from '@eslint/compat';
 import { FlatCompat } from '@eslint/eslintrc';
+import js from '@eslint/js';
+import typescriptEslint from '@typescript-eslint/eslint-plugin';
+import tsParser from '@typescript-eslint/parser';
+import prettier from 'eslint-plugin-prettier';
+import globals from 'globals';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,10 +32,10 @@ export default [
     compat.extends(
       'eslint:recommended',
       'plugin:@typescript-eslint/recommended',
+      'plugin:prettier/recommended',
       'plugin:import/errors',
       'plugin:import/warnings',
-      'plugin:import/typescript',
-      'plugin:prettier/recommended'
+      'plugin:import/typescript'
     )
   ),
   {
@@ -59,7 +60,6 @@ export default [
 
     rules: {
       'prettier/prettier': 'error',
-      'capitalized-comments': 'error',
       'consistent-return': 'error',
       curly: ['error', 'all'],
       'default-case': 'error',

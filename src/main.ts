@@ -15,6 +15,8 @@ import 'dotenv/config';
 
 import LRU from 'lru-cache';
 import type WebSocket from 'ws';
+// eslint-disable-next-line import/no-unresolved
+import { Innertube } from 'youtubei.js';
 
 import { TetrioUserInfo, TetrioUserRecords } from './interfaces/APIs/TetrioAPI';
 import { GuildMusicData } from './interfaces/Music/GuildMusicData/GuildMusicData';
@@ -73,5 +75,6 @@ declare module '@sapphire/pieces' {
         guildIdSet: Set<string>;
       }
     >;
+    innertube: Innertube;
   }
 }

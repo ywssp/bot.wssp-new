@@ -9,6 +9,8 @@ import http from 'http';
 
 import LRU from 'lru-cache';
 import { Duration } from 'luxon';
+// eslint-disable-next-line import/no-unresolved
+import { ClientType, Innertube, UniversalCache } from 'youtubei.js';
 
 export class ReadyListener extends Listener {
   public constructor(context: Listener.Context, options: Listener.Options) {
@@ -19,14 +21,7 @@ export class ReadyListener extends Listener {
     });
   }
 
-  public run(client: Client) {
-    // Log the bot's start time
-    const now = new Date();
-
-    this.container.logger.info(
-      `${client.user?.tag} has started in ${now.toUTCString()}`
-    );
-
+  public async run(client: Client) {
     // Setup the HTTP server if the CREATE_HTTP_SERVER env variable is set to true
     if (process.env.CREATE_HTTP_SERVER === 'true') {
       const port = 3000;
@@ -52,6 +47,13 @@ export class ReadyListener extends Listener {
           client_id: id
         }
       });
+    });
+
+    // Setup YouTube Agent
+    this.container.innertube = await Innertube.create({
+      cache: new UniversalCache(false),
+      generate_session_locally: true,
+      client_type: ClientType.MUSIC
     });
 
     // Setup the guild music data map
@@ -105,5 +107,12 @@ export class ReadyListener extends Listener {
         guildIdSet: new Set()
       }
     };
+
+    // Log the bot's start time
+    const now = new Date();
+
+    this.container.logger.info(
+      `${client.user?.tag} has started in ${now.toUTCString()}`
+    );
   }
 }
