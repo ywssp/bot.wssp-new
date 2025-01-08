@@ -1,13 +1,15 @@
 'use strict';
 
 import { container } from '@sapphire/framework';
+
 import * as playdl from 'play-dl';
+
+import { TrackCacheResult } from '../../../../interfaces/Music/Queue System/TrackCacheResult';
 import {
-  TrackInfo,
-  CachedTrackInfo
+  CachedTrackInfo,
+  TrackInfo
 } from '../../../../interfaces/Music/Queue System/TrackInfo';
 import { YouTubeTerms } from '../../../../settings/MusicSourceTerms';
-import { TrackCacheResult } from '../../../../interfaces/Music/Queue System/TrackCacheResult';
 
 function storeYoutubeTrackInCache(track: TrackInfo) {
   container.caches.youtubeTracks.set(

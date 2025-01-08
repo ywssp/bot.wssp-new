@@ -365,9 +365,9 @@ async function playTrack(
     audioTrack.source === 'youtube_music'
   ) {
     const streamedTrack = await container.innertube.download(audioTrack.id, {
-      type: 'video+audio',
+      type: 'audio',
       quality: 'best',
-      client: 'YTMUSIC'
+      client: 'WEB'
     });
 
     const readableStream = Readable.from(streamedTrack);

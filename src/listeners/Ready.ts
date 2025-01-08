@@ -9,8 +9,8 @@ import http from 'http';
 
 import LRU from 'lru-cache';
 import { Duration } from 'luxon';
-// eslint-disable-next-line import/no-unresolved
-import { ClientType, Innertube, UniversalCache } from 'youtubei.js';
+
+import { innertubeSetup } from '../functions/music-utilities/innertubeSetup';
 
 export class ReadyListener extends Listener {
   public constructor(context: Listener.Context, options: Listener.Options) {
@@ -49,12 +49,7 @@ export class ReadyListener extends Listener {
       });
     });
 
-    // Setup YouTube Agent
-    this.container.innertube = await Innertube.create({
-      cache: new UniversalCache(false),
-      generate_session_locally: true,
-      client_type: ClientType.MUSIC
-    });
+    await innertubeSetup();
 
     // Setup the guild music data map
     this.container.guildMusicDataMap = new Map();
