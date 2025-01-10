@@ -82,25 +82,20 @@ function sendNowPlayingMessage(musicData: GuildMusicData) {
     if (nextTrack !== undefined) {
       let nextString = '';
 
-      let nextTrackIdentifier = _.capitalize(
+      const nextTrackIdentifier = _.capitalize(
         getTrackNamings(nextTrack).trackTerm
       );
 
-      if (musicData.queueData.shuffle) {
-        nextString = `🔀 | The next track will be randomly picked from the queue.`;
-        nextTrackIdentifier = 'Track';
-      } else {
-        // Creates a string with a hyperlink to the next track, and a hyperlink to the next track's uploader.        / /
-        // If the uploader doesn't have a URL, it will just use the uploader's name.
-        // Example: [Next Track Title](<Track URL>) by [Uploader Name](<Optional Uploader URL>)
+      // Creates a string with a hyperlink to the next track, and a hyperlink to the next track's uploader.        / /
+      // If the uploader doesn't have a URL, it will just use the uploader's name.
+      // Example: [Next Track Title](<Track URL>) by [Uploader Name](<Optional Uploader URL>)
 
-        const uploaderString = nextTrack.getArtistHyperlinks();
+      const uploaderString = nextTrack.getArtistHyperlinks();
 
-        nextString = `${hyperlink(
-          nextTrack.title,
-          nextTrack.url
-        )} by ${uploaderString}`;
-      }
+      nextString = `${hyperlink(
+        nextTrack.title,
+        nextTrack.url
+      )} by ${uploaderString}`;
 
       embed.addFields([
         {
@@ -132,25 +127,20 @@ function sendNowPlayingMessage(musicData: GuildMusicData) {
     if (nextTrack !== undefined) {
       let nextString = '';
 
-      let nextTrackIdentifier = _.capitalize(
+      const nextTrackIdentifier = _.capitalize(
         getTrackNamings(nextTrack).trackTerm
       );
 
-      if (musicData.queueData.shuffle) {
-        nextString = `🔀 Shuffled`;
-        nextTrackIdentifier = 'Track';
-      } else {
-        // Creates a string with a hyperlink to the next track, and a hyperlink to the next track's uploader.
-        // If the uploader doesn't have a URL, it will just use the uploader's name.
-        // Example: [Next Track Title](<Track URL>) by [Uploader Name](<Optional Uploader URL>)
+      // Creates a string with a hyperlink to the next track, and a hyperlink to the next track's uploader.
+      // If the uploader doesn't have a URL, it will just use the uploader's name.
+      // Example: [Next Track Title](<Track URL>) by [Uploader Name](<Optional Uploader URL>)
 
-        const uploaderString = nextTrack.getArtistHyperlinks();
+      const uploaderString = nextTrack.getArtistHyperlinks();
 
-        nextString = `${hyperlink(
-          nextTrack.title,
-          nextTrack.url
-        )} by ${uploaderString}`;
-      }
+      nextString = `${hyperlink(
+        nextTrack.title,
+        nextTrack.url
+      )} by ${uploaderString}`;
 
       embed.setDescription(
         embed.data.description + `\nNext ${nextTrackIdentifier}: ${nextString}`
@@ -175,20 +165,16 @@ function sendNowPlayingMessage(musicData: GuildMusicData) {
     } | Added by ${inlineCode(currentTrack.addedBy)}`;
 
     if (nextTrack) {
-      if (musicData.queueData.shuffle) {
-        text += '\n🔀 | The next track will be randomly picked from the queue.';
-      } else {
-        const nextTrackIdentifier = _.capitalize(
-          getTrackNamings(nextTrack).trackTerm
-        );
+      const nextTrackIdentifier = _.capitalize(
+        getTrackNamings(nextTrack).trackTerm
+      );
 
-        const nextUploaderString = nextTrack.getArtistHyperlinks();
+      const nextUploaderString = nextTrack.getArtistHyperlinks();
 
-        text += `\n\nNext ${nextTrackIdentifier}:\n${hyperlink(
-          nextTrack.title,
-          hideLinkEmbed(nextTrack.url)
-        )} | By ${nextUploaderString}`;
-      }
+      text += `\n\nNext ${nextTrackIdentifier}:\n${hyperlink(
+        nextTrack.title,
+        hideLinkEmbed(nextTrack.url)
+      )} | By ${nextUploaderString}`;
     } else {
       text += '\n\nLeaving in 5 minutes after the queue is empty.';
     }
@@ -281,14 +267,6 @@ function handleTrackEnd(guildId: string) {
   // Do not continue if the queue is empty
   if (isQueueEmpty) {
     return;
-  }
-
-  if (queueData.shuffle && queueData.loop.type !== 'track') {
-    const randomIndex = Math.floor(Math.random() * queueData.getQueue().length);
-
-    const selectedTrack = queueData.trackQueue.splice(randomIndex, 1)[0];
-
-    queueData.addTracksToQueue(selectedTrack);
   }
 
   const audioPlayer = getAudioPlayer(guildId);

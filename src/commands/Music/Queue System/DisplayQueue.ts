@@ -47,6 +47,8 @@ export class DisplayQueueCommand extends Command {
     let index = 0;
     let trackNumber = 1;
 
+    let playlistCount = 0;
+
     const queueFields = [];
     let playlistQueue: QueuedTrackInfo[] = [];
     let endOfPlaylist = false;
@@ -59,21 +61,29 @@ export class DisplayQueueCommand extends Command {
         currentItem.getRemainingTracksCount() > 0 &&
         playlistQueue.length === 0
       ) {
-        let header = '';
+        playlistCount++;
 
-        if (currentItem.currentIndex !== undefined) {
-          header = 'Currently playing from';
-        } else {
-          header = 'Start of Playlist';
+        let header = 'Start of Playlist';
+
+        if (index === 0) {
+          header = 'Currently Playing from';
         }
 
+        // 📼1 Start of Playlist Name
+        const remainingTracks = currentItem.getRemainingTracksCount();
+        const totalTracks = currentItem.trackList.length;
+
         const playlistField = {
-          name: `\u200b`,
-          value: `📼 ${header} ${bold(
-            hyperlink(currentItem.title, currentItem.url)
-          )}`,
+          name: `${playlistCount}-📼 | ${header} "${currentItem.title}"`,
+          value: `${remainingTracks} ${
+            remainingTracks === totalTracks ? 'tracks' : 'tracks remaining'
+          } `,
           inline: false
         };
+
+        if (currentItem.shuffled) {
+          playlistField.value += '\n🔀 Shuffled';
+        }
 
         queueFields.push(playlistField);
 
@@ -114,35 +124,24 @@ export class DisplayQueueCommand extends Command {
       trackNumber++;
     }
 
-    let description = null;
-
-    if (guildQueueData.shuffle) {
-      description =
-        '🔀 | The queue is shuffled. Tracks will be played in a random order.';
-    }
+    let embedDescription: string | null = null;
 
     if (guildQueueData.loop.type === 'track') {
-      if (description === null) {
-        description = '';
-      } else {
-        description += '\n';
-      }
-
       const currentTrack = guildQueueData.getCurrentTrack();
 
       if (currentTrack !== undefined) {
-        description += `🔂 | ${inlineCode(currentTrack.title)} by ${inlineCode(
-          currentTrack.getArtistHyperlinks()
-        )} is looping.`;
+        embedDescription = `🔂 | ${inlineCode(
+          currentTrack.title
+        )} by ${inlineCode(currentTrack.getArtistHyperlinks())} is looping.`;
       }
     }
 
     const embed = new EmbedBuilder()
       .setColor(ColorPalette.Default)
       .setTitle('Queue')
-      .setDescription(description)
+      .setDescription(embedDescription)
       .setFooter({
-        text: 'Use "/skip <number>" to go a specific song'
+        text: 'Use "/skip <number>" to skip to a track'
       });
 
     createPagedEmbed(interaction, queueFields, embed);

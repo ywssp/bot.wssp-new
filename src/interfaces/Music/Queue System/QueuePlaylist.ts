@@ -39,6 +39,8 @@ export class QueuePlaylist {
   }
 
   shuffle() {
+    this.shuffled = true;
+
     for (let i = this.trackOrder.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [this.trackOrder[i], this.trackOrder[j]] = [
@@ -49,6 +51,8 @@ export class QueuePlaylist {
   }
 
   unshuffle() {
+    this.shuffled = false;
+
     const startPoint = (this.currentIndex ?? -1) + 1;
     this.trackOrder = [];
 

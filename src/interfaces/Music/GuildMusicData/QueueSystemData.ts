@@ -18,7 +18,6 @@ export class QueueSystemData {
    * Whether the current track was skipped
    */
   skipped: boolean;
-  shuffle: boolean;
   /**
    * How the queue should loop
    * 'off' - The queue will not loop
@@ -36,7 +35,6 @@ export class QueueSystemData {
     this.trackHistory = [];
     this.playing = false;
     this.skipped = false;
-    this.shuffle = false;
     this.loop = {
       type: 'off',
       emoji: '➡️'
