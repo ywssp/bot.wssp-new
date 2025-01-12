@@ -5,7 +5,7 @@ import { ChatInputCommand, Command } from '@sapphire/framework';
 import { getGuildMusicData } from '../../../functions/music-utilities/guildMusicDataManager';
 import { QueuePlaylist } from '../../../interfaces/Music/Queue System/QueuePlaylist';
 
-export class ShuffleQueueCommand extends Command {
+export class ShufflePlaylistCommand extends Command {
   public constructor(context: Command.Context, options: Command.Options) {
     super(context, {
       ...options,
@@ -23,10 +23,15 @@ export class ShuffleQueueCommand extends Command {
       builder
         .setName(this.name)
         .setDescription(this.description)
-        .addBooleanOption((option) =>
+        .addStringOption((option) =>
           option
             .setName('shuffle')
             .setDescription('Whether to shuffle the playlist or not')
+            .setChoices([
+              { name: 'Shuffle', value: 'shuffle' },
+              { name: 'Unshuffle', value: 'unshuffle' },
+              { name: 'Reshuffle', value: 'reshuffle' }
+            ])
             .setRequired(false)
         )
         .addIntegerOption((option) =>
@@ -53,8 +58,6 @@ export class ShuffleQueueCommand extends Command {
     }
 
     const guildQueueData = guildMusicData.queueData;
-
-    let mode = interaction.options.getBoolean('shuffle');
 
     let playlistNumber = interaction.options.getInteger('playlist-number') ?? 1;
 
@@ -93,7 +96,20 @@ export class ShuffleQueueCommand extends Command {
       return;
     }
 
-    if (playlist.shuffled === mode) {
+    let mode = interaction.options.getString('shuffle', false) as
+      | 'shuffle'
+      | 'unshuffle'
+      | 'reshuffle'
+      | null;
+
+    if (mode === null) {
+      mode = playlist.shuffled ? 'unshuffle' : 'shuffle';
+    }
+
+    if (
+      (playlist.shuffled && mode === 'shuffle') ||
+      (!playlist.shuffled && mode === 'unshuffle')
+    ) {
       interaction.reply({
         content: `❗ | The playlist is already ${
           playlist.shuffled ? '' : 'un'
@@ -103,18 +119,30 @@ export class ShuffleQueueCommand extends Command {
       return;
     }
 
-    if (playlist.shuffled) {
-      playlist.unshuffle();
-    } else {
-      playlist.shuffle();
+    let emoji = '🔀';
+    let modeMessage = 'shuffled';
+
+    switch (mode) {
+      case 'shuffle':
+        playlist.shuffle();
+        emoji = '🔀';
+        modeMessage = 'shuffled';
+        break;
+      case 'unshuffle':
+        playlist.unshuffle();
+        emoji = '➡️';
+        modeMessage = 'unshuffled';
+        break;
+      case 'reshuffle':
+      default:
+        playlist.reshuffle();
+        emoji = '🔄';
+        modeMessage = 'reshuffled';
+        break;
     }
 
-    mode = playlist.shuffled;
-
     interaction.reply(
-      `${mode ? '🔀' : '➡️'} | The playlist \`${playlist.title}\` is now ${
-        playlist.shuffled ? '' : 'un'
-      }shuffled.`
+      `${emoji} | The playlist \`${playlist.title}\` is now ${modeMessage}.`
     );
     return;
   }

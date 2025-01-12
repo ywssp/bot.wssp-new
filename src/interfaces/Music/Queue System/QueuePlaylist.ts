@@ -1,5 +1,8 @@
 'use strict';
 
+import _ from 'lodash';
+import seedrandom from 'seedrandom';
+
 import { QueueItem } from '../GuildMusicData/QueueSystemData';
 
 export class QueuePlaylist {
@@ -12,6 +15,7 @@ export class QueuePlaylist {
   currentIndex?: number;
 
   shuffled: boolean;
+  shuffleSeed?: string;
   queueLoop: boolean;
 
   constructor(
@@ -31,7 +35,7 @@ export class QueuePlaylist {
     this.queueLoop = loop;
 
     if (this.shuffled) {
-      this.shuffle();
+      this.reshuffle();
     }
   }
 
@@ -39,16 +43,48 @@ export class QueuePlaylist {
     this.unshuffle();
   }
 
-  shuffle() {
-    this.shuffled = true;
+  generateSeed() {
+    let generatedSeed = '';
 
-    for (let i = this.trackOrder.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [this.trackOrder[i], this.trackOrder[j]] = [
-        this.trackOrder[j],
-        this.trackOrder[i]
-      ];
+    // Make sure the generated seed is different from the current one
+    do {
+      generatedSeed = Math.random().toString(36).substring(2);
+    } while (generatedSeed === this.shuffleSeed);
+
+    this.shuffleSeed = generatedSeed.substring(0, 16);
+  }
+
+  reshuffle() {
+    this.generateSeed();
+    this.shuffle();
+  }
+
+  shuffle() {
+    this.unshuffle();
+
+    if (this.shuffleSeed === undefined) {
+      this.generateSeed();
     }
+
+    this.shuffled = true;
+    const rng = seedrandom(this.shuffleSeed);
+
+    const fullOrder = _.uniq(this.trackOrderLoop.slice().sort((a, b) => a - b));
+
+    for (let i = fullOrder.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [fullOrder[i], fullOrder[j]] = [fullOrder[j], fullOrder[i]];
+    }
+
+    while (fullOrder[0] !== this.currentIndex) {
+      fullOrder.push(fullOrder.shift() as number);
+    }
+
+    // Remove the current track from the shuffled order
+    fullOrder.shift();
+
+    this.trackOrder = fullOrder.slice();
+    this.trackOrderLoop = fullOrder.slice();
   }
 
   unshuffle() {
@@ -56,12 +92,22 @@ export class QueuePlaylist {
 
     const startPoint = (this.currentIndex ?? -1) + 1;
     this.trackOrder = [];
+    this.trackOrderLoop = [];
 
-    for (let i = startPoint; i < this.trackList.length; i++) {
-      this.trackOrder.push(i);
-    }
+    let i = startPoint;
 
-    this.trackOrderLoop = this.trackOrder.slice();
+    do {
+      if (i >= startPoint) {
+        this.trackOrder.push(i);
+      }
+
+      this.trackOrderLoop.push(i);
+
+      i++;
+      if (i === this.trackList.length) {
+        i = 0;
+      }
+    } while (i !== startPoint);
   }
 
   getUsedQueue(): typeof this.trackOrder {
