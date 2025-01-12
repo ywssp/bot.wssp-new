@@ -85,6 +85,10 @@ export class DisplayQueueCommand extends Command {
           playlistField.value += '\n🔀 Shuffled';
         }
 
+        if (currentItem.queueLoop) {
+          playlistField.value += '\n🔁 Playlist Looped';
+        }
+
         queueFields.push(playlistField);
 
         playlistQueue = currentItem.getRemainingTracks();

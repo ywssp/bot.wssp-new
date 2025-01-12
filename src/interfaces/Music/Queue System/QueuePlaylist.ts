@@ -8,6 +8,7 @@ export class QueuePlaylist {
 
   trackList: QueueItem[];
   trackOrder: number[] = [];
+  trackOrderLoop: number[] = [];
   currentIndex?: number;
 
   shuffled: boolean;
@@ -59,22 +60,51 @@ export class QueuePlaylist {
     for (let i = startPoint; i < this.trackList.length; i++) {
       this.trackOrder.push(i);
     }
+
+    this.trackOrderLoop = this.trackOrder.slice();
+  }
+
+  getUsedQueue(): typeof this.trackOrder {
+    if (this.queueLoop) {
+      return this.trackOrderLoop;
+    }
+
+    return this.trackOrder;
   }
 
   getRemainingTracks(): (typeof this.trackList)[number][] {
-    return this.trackOrder.map((index) => this.trackList[index]);
+    const usedQueue = this.getUsedQueue();
+
+    return usedQueue.map((index) => this.trackList[index]);
   }
 
   getRemainingTracksCount(): number {
-    return this.trackOrder.length;
+    const usedQueue = this.getUsedQueue();
+
+    return usedQueue.length;
   }
 
   advanceTrack(amount: number): typeof this.trackList {
-    if (amount < 0 || amount > this.trackOrder.length) {
+    if (amount <= 0) {
       throw new Error('Invalid amount');
     }
 
-    const removedIndexes = this.trackOrder.splice(0, amount);
+    // Remove indexes from both trackOrder arrays
+    const originalSplice = this.trackOrder.splice(0, amount);
+    const loopSplice = this.trackOrderLoop.splice(0, amount);
+
+    const removedIndexes = this.queueLoop ? loopSplice : originalSplice;
+
+    // Do not extend trackOrderLoop if the amount skipped is greater than the remaining tracks
+    if (loopSplice.length === amount) {
+      this.trackOrderLoop.push(...removedIndexes);
+    }
+
+    // If the original trackOrder becomes empty, set it to the looped one
+    if (this.trackOrder.length === 0 && this.queueLoop) {
+      this.trackOrder = this.trackOrderLoop.slice();
+    }
+
     this.currentIndex = removedIndexes[removedIndexes.length - 1];
 
     return removedIndexes.map((index) => this.trackList[index]);

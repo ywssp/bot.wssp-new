@@ -85,29 +85,30 @@ export class QueueSystemData {
 
     const skippedTracks: QueueItem[] = [];
 
-    for (let i = 0; i < amount; i++) {
+    while (amount > 0) {
       if (this.trackQueue.length === 0) {
         break;
       }
 
-      let track: QueueItem;
+      let tracks: QueueItem[];
 
       if (this.trackQueue[0] instanceof QueuePlaylist) {
         const playlist = this.trackQueue[0];
 
-        if (playlist.getRemainingTracksCount() === 0) {
-          this.trackQueue.shift();
+        tracks = playlist.advanceTrack(amount);
+        amount -= tracks.length;
 
-          i--;
-          continue;
-        } else {
-          track = playlist.advanceTrack(1).pop() as QueueItem;
+        const remainingTracks = playlist.getRemainingTracksCount();
+
+        if (remainingTracks === 0) {
+          this.trackQueue.shift();
         }
       } else {
-        track = this.trackQueue.shift() as QueueItem;
+        tracks = [this.trackQueue.shift() as QueueItem];
+        amount--;
       }
 
-      skippedTracks.push(track);
+      skippedTracks.push(...tracks);
     }
 
     this.updateCurrentTrack(skippedTracks.pop());

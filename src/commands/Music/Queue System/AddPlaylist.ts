@@ -360,10 +360,6 @@ export class AddPlaylistCommand extends Command {
       return;
     }
 
-    if (interaction.options.getBoolean('loop')) {
-      guildQueueData.setLoopType('queue');
-    }
-
     let lengthDescription = '';
 
     if (playlistDuration instanceof Duration) {
@@ -435,7 +431,7 @@ export class AddPlaylistCommand extends Command {
       link,
       tracks,
       interaction.options.getBoolean('shuffle') ?? false,
-      false
+      interaction.options.getBoolean('loop') ?? false
     );
 
     guildQueueData.addPlaylistToQueue(queuePlaylist);
