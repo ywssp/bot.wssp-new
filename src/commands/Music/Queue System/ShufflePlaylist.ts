@@ -64,7 +64,7 @@ export class ShufflePlaylistCommand extends Command {
     let playlist: QueuePlaylist | undefined;
     let playlistCount = 0;
 
-    for (const item of guildQueueData.trackQueue) {
+    for (const item of guildQueueData.trackList) {
       if (item instanceof QueuePlaylist) {
         playlistCount++;
 

@@ -9,9 +9,10 @@ import {
 export type QueueItem = QueuedTrackInfo | QueuedAdaptedTrackInfo;
 
 export class QueueSystemData {
-  trackQueue: (QueueItem | QueuePlaylist)[];
+  trackList: (QueueItem | QueuePlaylist)[];
   trackHistory: QueueItem[];
   currentTrack?: QueueItem;
+  progressIndex: number;
 
   playing: boolean;
   /**
@@ -29,16 +30,20 @@ export class QueueSystemData {
     | { type: 'off'; emoji: '➡️' }
     | { type: 'track'; emoji: '🔂' }
     | { type: 'queue'; emoji: '🔁' };
+  looped: boolean;
 
   constructor() {
-    this.trackQueue = [];
+    this.trackList = [];
     this.trackHistory = [];
+    this.progressIndex = 0;
+
     this.playing = false;
     this.skipped = false;
     this.loop = {
       type: 'off',
       emoji: '➡️'
     };
+    this.looped = false;
   }
 
   /**
@@ -59,8 +64,8 @@ export class QueueSystemData {
   /**
    * Returns the array of tracks that will be played next
    */
-  getQueue(): typeof this.trackQueue {
-    return this.trackQueue;
+  getQueue(): typeof this.trackList {
+    return this.trackList.slice(this.progressIndex);
   }
 
   /**
@@ -70,12 +75,12 @@ export class QueueSystemData {
     return this.trackHistory;
   }
 
-  addTracksToQueue(...track: typeof this.trackQueue) {
-    this.trackQueue.push(...track);
+  addTracksToQueue(...track: typeof this.trackList) {
+    this.trackList.push(...track);
   }
 
   addPlaylistToQueue(playlist: QueuePlaylist) {
-    this.trackQueue.push(playlist);
+    this.trackList.push(playlist);
   }
 
   advanceQueue(amount: number, skip: boolean): QueueItem[] {
@@ -86,14 +91,16 @@ export class QueueSystemData {
     const skippedTracks: QueueItem[] = [];
 
     while (amount > 0) {
-      if (this.trackQueue.length === 0) {
+      if (this.trackList.length === this.progressIndex) {
         break;
       }
 
       let tracks: QueueItem[];
 
-      if (this.trackQueue[0] instanceof QueuePlaylist) {
-        const playlist = this.trackQueue[0];
+      const currentItem = this.trackList[this.progressIndex];
+
+      if (currentItem instanceof QueuePlaylist) {
+        const playlist = currentItem;
 
         tracks = playlist.advanceTrack(amount);
         amount -= tracks.length;
@@ -101,14 +108,17 @@ export class QueueSystemData {
         const remainingTracks = playlist.getRemainingTracksCount();
 
         if (remainingTracks === 0) {
-          this.trackQueue.shift();
+          this.progressIndex++;
         }
       } else {
-        tracks = [this.trackQueue.shift() as QueueItem];
+        tracks = [currentItem];
+        this.progressIndex++;
         amount--;
       }
 
       skippedTracks.push(...tracks);
+
+      this.loopQueue();
     }
 
     this.updateCurrentTrack(skippedTracks.pop());
@@ -121,6 +131,25 @@ export class QueueSystemData {
       type,
       emoji: ['➡️', '🔂', '🔁'][['off', 'track', 'queue'].indexOf(type)]
     } as typeof this.loop;
+
+    this.loopQueue();
+  }
+
+  loopQueue() {
+    if (
+      this.loop.type === 'queue' &&
+      this.progressIndex >= this.trackList.length
+    ) {
+      this.progressIndex = 0;
+
+      for (const item of this.trackList) {
+        if (item instanceof QueuePlaylist) {
+          item.reinitTrackOrder();
+        }
+      }
+
+      this.markLooped();
+    }
   }
 
   /**
@@ -130,5 +159,9 @@ export class QueueSystemData {
    */
   markSkipped() {
     this.skipped = true;
+  }
+
+  markLooped() {
+    this.looped = true;
   }
 }

@@ -47,7 +47,7 @@ export class ClearTrackListCommand extends Command {
     const guildQueueData = guildMusicData.queueData;
 
     if (interaction.options.getSubcommand() === 'queue') {
-      guildQueueData.trackQueue = [];
+      guildQueueData.trackList = [];
 
       interaction.reply('🗑 | Cleared the track queue.');
     }

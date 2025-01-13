@@ -66,7 +66,7 @@ export class LeaveVCCommand extends Command {
     switch (interaction.options.getString('clear') as 'queue' | 'data' | null) {
       case 'queue':
         if (guildMusicData.queueData !== undefined) {
-          guildMusicData.queueData.trackQueue.length = 0;
+          guildMusicData.queueData.trackList.length = 0;
         }
         break;
       case 'data':

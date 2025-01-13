@@ -194,13 +194,6 @@ function handleTrackEnd(guildId: string) {
 
   const queueData = musicData.queueData;
 
-  if (
-    queueData.loop.type === 'queue' &&
-    queueData.getCurrentTrack() !== undefined
-  ) {
-    queueData.addTracksToQueue(queueData.getCurrentTrack()!);
-  }
-
   if (queueData.loop.type !== 'track' && !queueData.skipped) {
     queueData.advanceQueue(1, false);
   }
@@ -276,6 +269,22 @@ function handleTrackEnd(guildId: string) {
       content: '❌ | An error occurred while trying to play the next track.'
     });
     return;
+  }
+
+  if (queueData.looped) {
+    const loopEmbed = new EmbedBuilder()
+      .setColor(ColorPalette.Info)
+      .setTitle('Queue Loop')
+      .setDescription('🔁 | Queue finished, now looping the queue...')
+      .setFooter({
+        text: 'Use "/leave" to stop music playback.'
+      });
+
+    musicData.sendUpdateMessage({
+      embeds: [loopEmbed]
+    });
+
+    queueData.looped = false;
   }
 
   if (!isQueueEmpty) {
