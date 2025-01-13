@@ -3,6 +3,7 @@
 import { ChatInputCommand, Command } from '@sapphire/framework';
 
 import { getGuildMusicData } from '../../../functions/music-utilities/guildMusicDataManager';
+import { QueuePlaylist } from '../../../interfaces/Music/Queue System/QueuePlaylist';
 
 export class SetLoopCommand extends Command {
   public constructor(context: Command.Context, options: Command.Options) {
@@ -22,15 +23,40 @@ export class SetLoopCommand extends Command {
       builder
         .setName(this.name)
         .setDescription(this.description)
-        .addStringOption((option) =>
-          option
-            .setName('mode')
-            .setDescription('The loop mode to set.')
-            .setRequired(true)
-            .setChoices(
-              { name: 'Off', value: 'off' },
-              { name: 'Track', value: 'track' },
-              { name: 'Queue', value: 'queue' }
+        .addSubcommand((subcommand) =>
+          subcommand
+            .setName('main')
+            .setDescription('Changes the loop mode of the main queue.')
+            .addStringOption((option) =>
+              option
+                .setName('mode')
+                .setDescription('The loop mode to set.')
+                .setRequired(true)
+                .addChoices([
+                  { name: 'Off', value: 'off' },
+                  { name: 'Track', value: 'track' },
+                  { name: 'Queue', value: 'queue' }
+                ])
+            )
+        )
+        .addSubcommand((subcommand) =>
+          subcommand
+            .setName('playlist')
+            .setDescription('Changes the loop mode of the selected playlist.')
+            .addBooleanOption((option) =>
+              option
+                .setName('mode')
+                .setDescription('The loop mode to set.')
+                .setRequired(false)
+            )
+            .addIntegerOption((option) =>
+              option
+                .setName('playlist-number')
+                .setDescription(
+                  'The playlist to shuffle. Defaults to the nearest playlist.'
+                )
+                .setMinValue(1)
+                .setRequired(false)
             )
         )
     );
@@ -49,16 +75,69 @@ export class SetLoopCommand extends Command {
 
     const guildQueueData = guildMusicData.queueData;
 
-    const mode = interaction.options.getString('mode') as
-      | 'off'
-      | 'track'
-      | 'queue';
+    const scope = interaction.options.getSubcommand(true) as
+      | 'main'
+      | 'playlist';
 
-    guildQueueData.setLoopType(mode);
+    if (scope === 'main') {
+      const mode = interaction.options.getString('mode', true) as
+        | 'off'
+        | 'track'
+        | 'queue';
+      guildQueueData.setLoopType(mode);
+
+      interaction.reply(
+        `${guildQueueData.loop.emoji} | Set main queue loop to \`${mode}\`.`
+      );
+      return;
+    }
+
+    let playlistNumber = interaction.options.getInteger('playlist-number') ?? 1;
+
+    let playlist: QueuePlaylist | undefined;
+    let playlistCount = 0;
+
+    for (const item of guildQueueData.trackList) {
+      if (item instanceof QueuePlaylist) {
+        playlistCount++;
+
+        if (playlistNumber > 1) {
+          playlistNumber--;
+          continue;
+        }
+
+        playlist = item;
+        break;
+      }
+    }
+
+    if (playlistCount === 0) {
+      interaction.reply({
+        content: '❓ | There are no playlists to loop.',
+        ephemeral: true
+      });
+      return;
+    }
+
+    if (playlist === undefined) {
+      interaction.reply({
+        content: `❓ | The playlist number is invalid. The number must be from \`${
+          playlistCount === 1 ? '1' : '1-' + playlistCount
+        }\``,
+        ephemeral: true
+      });
+      return;
+    }
+
+    const mode =
+      interaction.options.getBoolean('mode', false) ?? !playlist.queueLoop;
+
+    playlist.queueLoop = mode;
 
     interaction.reply(
-      `${guildQueueData.loop.emoji} | Loop mode set to \`${mode}\`.`
+      `${playlist.queueLoop ? '🔁' : '➡️'} | Set playlist loop to \`${
+        mode ? 'on' : 'off'
+      }\`.`
     );
-    return;
   }
 }
