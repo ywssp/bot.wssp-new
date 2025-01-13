@@ -79,6 +79,10 @@ export class QueueSystemData {
     this.trackList.push(...track);
   }
 
+  addTracksToQueueStart(...track: typeof this.trackList) {
+    this.trackList.splice(this.progressIndex, 0, ...track);
+  }
+
   addPlaylistToQueue(playlist: QueuePlaylist) {
     this.trackList.push(playlist);
   }

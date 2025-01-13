@@ -39,13 +39,9 @@ export class DisplayTrackHistoryCommand extends Command {
 
     const history = guildMusicData.queueData.getHistory();
 
-    // Reverses a copy of the array instead
-    const historyFields = history
-      .slice(0)
-      .reverse()
-      .map((track, index) =>
-        createEmbedFieldFromTrack(track, `${index + 1}. `)
-      );
+    const historyFields = history.map((track, index) =>
+      createEmbedFieldFromTrack(track, `${index + 1}. `)
+    );
 
     const embed = new EmbedBuilder()
       .setColor(ColorPalette.Default)

@@ -107,6 +107,20 @@ export class PlayMusicCommand extends Command {
                 .setRequired(true)
             )
         )
+        .addSubcommand((subcommand) =>
+          subcommand
+            .setName('history')
+            .setDescription('Replays a track from the track history')
+            .addIntegerOption((option) =>
+              option
+                .setName('index')
+                .setDescription(
+                  'The index of the track in the history. Uses the latest track if omitted'
+                )
+                .setMinValue(1)
+                .setRequired(false)
+            )
+        )
     );
   }
 
@@ -172,43 +186,46 @@ export class PlayMusicCommand extends Command {
       | 'youtube'
       | 'yt_music'
       | 'soundcloud'
-      | 'spotify';
-    const linkOrQuery = interaction.options.getString('link-or-query', true);
+      | 'spotify'
+      | 'history';
+    const linkOrQuery = interaction.options.getString('link-or-query') ?? '';
 
-    if (linkOrQuery.length < 3) {
-      interaction.reply('Search query is too short!');
-      return;
-    }
+    if (source !== 'history') {
+      if (linkOrQuery.length < 3) {
+        interaction.reply('Search query is too short!');
+        return;
+      }
 
-    let linkOrQueryType = await playdl.validate(linkOrQuery);
+      let linkOrQueryType = await playdl.validate(linkOrQuery);
 
-    if (linkOrQueryType === false) {
-      linkOrQueryType = 'search';
-    }
+      if (linkOrQueryType === false) {
+        linkOrQueryType = 'search';
+      }
 
-    if (
-      linkOrQueryType === 'yt_playlist' ||
-      linkOrQueryType === 'so_playlist' ||
-      linkOrQueryType === 'sp_playlist' ||
-      linkOrQueryType === 'sp_album'
-    ) {
-      interaction.reply({
-        content: 'Playlist detected. Use the `addplaylist` command instead.',
-        ephemeral: true
-      });
-      return;
-    }
+      if (
+        linkOrQueryType === 'yt_playlist' ||
+        linkOrQueryType === 'so_playlist' ||
+        linkOrQueryType === 'sp_playlist' ||
+        linkOrQueryType === 'sp_album'
+      ) {
+        interaction.reply({
+          content: 'Playlist detected. Use the `addplaylist` command instead.',
+          ephemeral: true
+        });
+        return;
+      }
 
-    if (linkOrQueryType.startsWith('yt_') && source === 'soundcloud') {
-      source = 'youtube';
-    }
+      if (linkOrQueryType.startsWith('yt_') && source === 'soundcloud') {
+        source = 'youtube';
+      }
 
-    if (linkOrQueryType.startsWith('so_') && source !== 'soundcloud') {
-      source = 'soundcloud';
-    }
+      if (linkOrQueryType.startsWith('so_') && source !== 'soundcloud') {
+        source = 'soundcloud';
+      }
 
-    if (linkOrQueryType.startsWith('sp_') && source !== 'spotify') {
-      source = 'spotify';
+      if (linkOrQueryType.startsWith('sp_') && source !== 'spotify') {
+        source = 'spotify';
+      }
     }
 
     if (!interaction.replied) {
@@ -299,7 +316,7 @@ export class PlayMusicCommand extends Command {
 
         return;
       }
-    } else {
+    } else if (source === 'spotify') {
       try {
         const search = await searchSpotifyAdapt(linkOrQuery, {
           limit: 1
@@ -326,6 +343,27 @@ export class PlayMusicCommand extends Command {
 
         return;
       }
+    } else {
+      const trackIndex =
+        (interaction.options.getInteger('index', false) ?? 1) - 1;
+
+      const history = guildQueueData.getHistory();
+
+      if (history.length === 0) {
+        interaction.editReply({
+          content: '❓ | Track history is empty.'
+        });
+        return;
+      }
+
+      if (trackIndex >= history.length) {
+        interaction.editReply({
+          content: '❌ | Invalid track index. Range: 1 - ' + history.length
+        });
+        return;
+      }
+
+      searchResult = history[trackIndex];
     }
 
     let queuedTrack: QueuedTrackInfo | QueuedAdaptedTrackInfo;

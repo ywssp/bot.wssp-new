@@ -389,7 +389,7 @@ async function playTrack(
   if (!(!trackSkipped && isLoopingByTrack)) {
     musicData.queueData.skipped = false;
 
-    musicData.queueData.trackHistory.push(track);
+    musicData.queueData.trackHistory.unshift(track);
 
     sendNowPlayingMessage(musicData);
   }
