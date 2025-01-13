@@ -35,7 +35,7 @@ export class QueuePlaylist {
     this.queueLoop = loop;
 
     if (this.shuffled) {
-      this.reshuffle();
+      this.shuffle();
     }
   }
 
@@ -52,6 +52,16 @@ export class QueuePlaylist {
     } while (generatedSeed === this.shuffleSeed);
 
     this.shuffleSeed = generatedSeed.substring(0, 16);
+  }
+
+  reinitTrackOrder() {
+    this.currentIndex = undefined;
+
+    this.initTrackOrder();
+
+    if (this.shuffled) {
+      this.shuffle();
+    }
   }
 
   reshuffle() {
@@ -76,12 +86,15 @@ export class QueuePlaylist {
       [fullOrder[i], fullOrder[j]] = [fullOrder[j], fullOrder[i]];
     }
 
-    while (fullOrder[0] !== this.currentIndex) {
-      fullOrder.push(fullOrder.shift() as number);
-    }
+    // If there is a current track, progress the shuffled order to the current track
+    if (this.currentIndex !== undefined) {
+      while (fullOrder[0] !== this.currentIndex) {
+        fullOrder.push(fullOrder.shift() as number);
+      }
 
-    // Remove the current track from the shuffled order
-    fullOrder.shift();
+      // Remove the current track from the shuffled order
+      fullOrder.shift();
+    }
 
     this.trackOrder = fullOrder.slice();
     this.trackOrderLoop = fullOrder.slice();
