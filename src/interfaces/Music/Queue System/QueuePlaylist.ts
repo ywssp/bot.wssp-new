@@ -57,9 +57,11 @@ export class QueuePlaylist {
   reinitTrackOrder() {
     this.currentIndex = undefined;
 
+    const shuffled = this.shuffled;
+
     this.initTrackOrder();
 
-    if (this.shuffled) {
+    if (shuffled) {
       this.shuffle();
     }
   }

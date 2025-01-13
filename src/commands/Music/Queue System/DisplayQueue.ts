@@ -1,7 +1,7 @@
 'use strict';
 
 import { ChatInputCommand, Command } from '@sapphire/framework';
-import { bold, EmbedBuilder, hyperlink, inlineCode } from 'discord.js';
+import { bold, EmbedBuilder, hyperlink } from 'discord.js';
 
 import { createPagedEmbed } from '../../../functions/createPagedEmbed';
 import { getGuildMusicData } from '../../../functions/music-utilities/guildMusicDataManager';
@@ -134,10 +134,13 @@ export class DisplayQueueCommand extends Command {
       const currentTrack = guildQueueData.getCurrentTrack();
 
       if (currentTrack !== undefined) {
-        embedDescription = `🔂 | ${inlineCode(
-          currentTrack.title
-        )} by ${inlineCode(currentTrack.getArtistHyperlinks())} is looping.`;
+        embedDescription = `🔂 | ${hyperlink(
+          currentTrack.title,
+          currentTrack.url
+        )} by ${currentTrack.getArtistHyperlinks()} is looping.`;
       }
+    } else if (guildQueueData.loop.type === 'queue') {
+      embedDescription = '🔁 | The queue will restart when it becomes empty.';
     }
 
     const embed = new EmbedBuilder()
